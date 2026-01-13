@@ -80,17 +80,6 @@ class BetterHealthBarImpl : BetterHealthBar() {
         val manager = Bukkit.getPluginManager()
         nms = when (MinecraftVersion.current) {
             MinecraftVersion.version1_21_11 -> kr.toxicity.healthbar.nms.v1_21_R7.NMSImpl()
-            MinecraftVersion.version1_21_9, MinecraftVersion.version1_21_10 -> kr.toxicity.healthbar.nms.v1_21_R6.NMSImpl()
-            MinecraftVersion.version1_21_6, MinecraftVersion.version1_21_7, MinecraftVersion.version1_21_8 -> kr.toxicity.healthbar.nms.v1_21_R5.NMSImpl()
-            MinecraftVersion.version1_21_5 -> kr.toxicity.healthbar.nms.v1_21_R4.NMSImpl()
-            MinecraftVersion.version1_21_4 -> kr.toxicity.healthbar.nms.v1_21_R3.NMSImpl()
-            MinecraftVersion.version1_21_2, MinecraftVersion.version1_21_3 -> kr.toxicity.healthbar.nms.v1_21_R2.NMSImpl()
-            MinecraftVersion.version1_21, MinecraftVersion.version1_21_1 -> kr.toxicity.healthbar.nms.v1_21_R1.NMSImpl()
-            MinecraftVersion.version1_20_5, MinecraftVersion.version1_20_6 -> kr.toxicity.healthbar.nms.v1_20_R4.NMSImpl()
-            MinecraftVersion.version1_20_3, MinecraftVersion.version1_20_4 -> kr.toxicity.healthbar.nms.v1_20_R3.NMSImpl()
-            MinecraftVersion.version1_20_2 -> kr.toxicity.healthbar.nms.v1_20_R2.NMSImpl()
-            MinecraftVersion.version1_20, MinecraftVersion.version1_20_1 -> kr.toxicity.healthbar.nms.v1_20_R1.NMSImpl()
-            MinecraftVersion.version1_19_4 -> kr.toxicity.healthbar.nms.v1_19_R3.NMSImpl()
             else -> {
                 warn(
                     "Unsupported version found: ${MinecraftVersion.current}",

@@ -59,5 +59,5 @@ fun Int.parseChar(): String {
 fun WidthComponent.toPixelComponent(int: Int) = PixelComponent(int, this)
 
 fun WidthComponent.shadowColor(color: Int) = apply {
-    if (MinecraftVersion.current.canUseShadowColor) component.shadowColor(ShadowColor.shadowColor(color))
+    component.shadowColor(ShadowColor.shadowColor(color))
 }

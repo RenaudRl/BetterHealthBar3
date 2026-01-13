@@ -63,40 +63,16 @@ class NMSImpl : NMS {
     private val plugin
         get() = BetterHealthBar.inst()
 
-    private val getConnection: (ServerCommonPacketListenerImpl) -> Connection = if (plugin.isPaper) {
-        {
-            it.connection
-        }
-    } else {
-        ServerCommonPacketListenerImpl::class.java.declaredFields.first { f ->
-            f.type == Connection::class.java
-        }.apply {
-            isAccessible = true
-        }.let { get ->
-            {
-                get[it] as Connection
-            }
-        }
-    }
-    private val entityTracker = ServerLevel::class.java.fields.firstOrNull {
-        it.type == PersistentEntitySectionManager::class.java
-    }?.apply { 
-        isAccessible = true
+    private val getConnection: (ServerCommonPacketListenerImpl) -> Connection = {
+        it.connection
     }
 
-    private val getEntityById: (LevelEntityGetter<net.minecraft.world.entity.Entity>, Int) -> net.minecraft.world.entity.Entity? = if (plugin.isPaper) EntityLookup::class.java.declaredFields.first {
+    private val getEntityById: (LevelEntityGetter<net.minecraft.world.entity.Entity>, Int) -> net.minecraft.world.entity.Entity? = EntityLookup::class.java.declaredFields.first {
         ConcurrentLong2ReferenceChainedHashTable::class.java.isAssignableFrom(it.type)
     }.let {
         it.isAccessible = true
         { e, i ->
             (it[e] as ConcurrentLong2ReferenceChainedHashTable<*>)[i.toLong()] as? net.minecraft.world.entity.Entity
-        }
-    } else LevelEntityGetterAdapter::class.java.declaredFields.first {
-        net.minecraft.world.level.entity.EntityLookup::class.java.isAssignableFrom(it.type)
-    }.let {
-        it.isAccessible = true
-        { e, i ->
-            (it[e] as net.minecraft.world.level.entity.EntityLookup<*>).getEntity(i) as? net.minecraft.world.entity.Entity
         }
     }
     private val getEntityFromMovePacket: (ClientboundMoveEntityPacket) -> Int = ClientboundMoveEntityPacket::class.java.declaredFields.first {
@@ -107,19 +83,13 @@ class NMSImpl : NMS {
             it[p] as Int
         }
     }
-    private val textVanilla: (Component) -> net.minecraft.network.chat.Component = if (plugin.isPaper) {
-        {
-            PaperAdventure.asVanilla(it)
-        }
-    } else {
-        {
-            CraftChatMessage.fromJSON(GsonComponentSerializer.gson().serialize(it))
-        }
+    private val textVanilla: (Component) -> net.minecraft.network.chat.Component = {
+        PaperAdventure.asVanilla(it)
     }
 
     override fun foliaAdapt(player: Player): Player {
         player as CraftPlayer
-        fun vanillaPlayer() = (if (plugin.isPaper) player.handleRaw else player.handle) as ServerPlayer
+        fun vanillaPlayer() = player.handleRaw as ServerPlayer
         return object : CraftPlayer(Bukkit.getServer() as CraftServer, vanillaPlayer()) {
             override fun getPersistentDataContainer(): CraftPersistentDataContainer {
                 return player.persistentDataContainer
@@ -201,7 +171,7 @@ class NMSImpl : NMS {
 
     override fun foliaAdapt(entity: org.bukkit.entity.LivingEntity): org.bukkit.entity.LivingEntity {
         entity as CraftLivingEntity
-        fun vanillaEntity() = (if (plugin.isPaper) entity.handleRaw else entity.handle) as LivingEntity
+        fun vanillaEntity() = entity.handleRaw as LivingEntity
         return object : CraftLivingEntity(Bukkit.getServer() as CraftServer, vanillaEntity()) {
             override fun getPersistentDataContainer(): CraftPersistentDataContainer {
                 return entity.persistentDataContainer
@@ -424,13 +394,7 @@ class NMSImpl : NMS {
 
         @Suppress("UNCHECKED_CAST")
         private fun getLevelGetter(): LevelEntityGetter<net.minecraft.world.entity.Entity> {
-            return if (plugin.isPaper) {
-                serverPlayer.level().`moonrise$getEntityLookup`()
-            } else {
-                entityTracker?.get(serverPlayer.level())?.let {
-                    (it as PersistentEntitySectionManager<*>).entityGetter as LevelEntityGetter<net.minecraft.world.entity.Entity>
-                } ?: throw RuntimeException("LevelEntityGetter")
-            }
+            return serverPlayer.level().`moonrise$getEntityLookup`()
         }
 
         private fun Int.toEntity() = getEntityById(getLevelGetter(), this)

@@ -12,8 +12,8 @@ import org.bukkit.entity.LivingEntity
 import org.bukkit.inventory.ItemStack
 import org.bukkit.util.Vector
 
-val ATTRIBUTE_MAX_HEALTH = Registry.ATTRIBUTE.get(NamespacedKey.minecraft(if (MinecraftVersion.current >= MinecraftVersion.version1_21_2) "max_health" else "generic.max_health"))!!
-val ATTRIBUTE_ARMOR = Registry.ATTRIBUTE.get(NamespacedKey.minecraft(if (MinecraftVersion.current >= MinecraftVersion.version1_21_2) "armor" else "generic.armor"))!!
+val ATTRIBUTE_MAX_HEALTH = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("max_health"))!!
+val ATTRIBUTE_ARMOR = Registry.ATTRIBUTE.get(NamespacedKey.minecraft("armor"))!!
 
 fun HealthBarCreateEvent.toEntityLocation(t: Double): Location = toEntityLocation(healthBar.positionEquation().evaluate(t))
 fun HealthBarCreateEvent.toEntityLocation(vector: Vector): Location {

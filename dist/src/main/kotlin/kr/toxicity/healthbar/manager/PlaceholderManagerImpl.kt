@@ -46,12 +46,7 @@ object PlaceholderManagerImpl : PlaceholderManager, BetterHealthBerManager {
         }
         PlaceholderContainer.BOOL.run {
             addPlaceholder("has_potion_effect", placeholder(1) {
-                if (MinecraftVersion.current >= MinecraftVersion.version1_20_3) {
-                    Registry.EFFECT.get(NamespacedKey.minecraft(it[0]))
-                } else {
-                    @Suppress("DEPRECATION")
-                    PotionEffectType.getByName(it[0])
-                }?.let { type ->
+                Registry.EFFECT.get(NamespacedKey.minecraft(it[0]))?.let { type ->
                     Function { pair: HealthBarCreateEvent ->
                         pair.entity.entity().hasPotionEffect(type)
                     }

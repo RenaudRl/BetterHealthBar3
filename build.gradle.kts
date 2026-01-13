@@ -105,17 +105,7 @@ class NmsVersion(val name: String) {
 }
 
 val nmsVersions = listOf(
-    NmsVersion("v1_19_R3"),
-    NmsVersion("v1_20_R1"),
-    NmsVersion("v1_20_R2"),
-    NmsVersion("v1_20_R3"),
-    NmsVersion("v1_20_R4"),
-    NmsVersion("v1_21_R1"),
-    NmsVersion("v1_21_R2"),
-    NmsVersion("v1_21_R3"),
-    NmsVersion("v1_21_R4"),
-    NmsVersion("v1_21_R5"),
-    NmsVersion("v1_21_R6"),
+
     NmsVersion("v1_21_R7")
 )
 

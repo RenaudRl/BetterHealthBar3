@@ -38,7 +38,6 @@ object PackUploader {
 
     fun upload(message: MessageDigest, byteArray: ByteArray) {
         val hash = StringBuilder(40)
-        val useUrl = MinecraftVersion.current >= MinecraftVersion.version1_20_3
         val digest = message.digest()
         for (element in digest) {
             val byte = element.toInt()
@@ -82,19 +81,11 @@ object PackUploader {
                             http.stop(0)
                         }
                         override fun apply(player: Player) {
-                            if (useUrl) {
-                                player.setResourcePack(uuid, url, digest, null, false)
-                            } else {
-                                player.setResourcePack(url, digest, null, false)
-                            }
+                            player.setResourcePack(uuid, url, digest, null, false)
                         }
                     }
                     Bukkit.getOnlinePlayers().forEach { player ->
-                        if (useUrl) {
-                            player.setResourcePack(uuid, url, digest, null, false)
-                        } else {
-                            player.setResourcePack(url, digest, null, false)
-                        }
+                        player.setResourcePack(uuid, url, digest, null, false)
                     }
                     info("Resource pack server opened at $url")
                 }.onFailure { e ->

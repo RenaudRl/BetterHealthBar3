@@ -1,71 +1,73 @@
-<div align="center">  
-  
-![healthbar](https://github.com/toxicity188/BetterHealthBar3/assets/114675706/8af7d97c-3277-42f7-bccd-d5e124dfa5df)  
+# BetterHealthBar
 
-**NOTICE: If you want to use BetterHealthBar with shaderspack, set use-core-shaders to false in config.yml (Default is true)**  
+![Java Version](https://img.shields.io/badge/Java-21-orange)
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![Target](https://img.shields.io/badge/Target-Folia%20/%20Paper/BTC--CORE%20-blue)
 
-Welcome to BetterHealthBar!
+**BetterHealthBar** is a high-performance, strictly optimized fork of **BetterHealthBar3**, engineered specifically for the **BTC Studio** infrastructure. This fork drops support for legacy platforms (Spigot, versions older than 1.21.11) to provide native, blazingly fast integration with **Paper** and **Folia**.
 
-[![GitHub Release](https://img.shields.io/github/v/release/toxicity188/BetterHealthBar3?display_name=release&style=for-the-badge&logo=kotlin)](https://github.com/toxicity188/BetterHealthBar3/releases/latest)
-[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/invite/rePyFESDbk) 
-[![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/toxicity188/BetterHealthBar3?style=for-the-badge&logo=github)](https://github.com/toxicity188/BetterHealthBar3/issues) 
-[![bStats Servers](https://img.shields.io/bstats/servers/21802?style=for-the-badge&logo=minecraft&label=bStats&color=0%2C150%2C136%2C0)](https://bstats.org/plugin/bukkit/BetterHealthBar/21802)
-[![Static Badge](https://img.shields.io/badge/paypal-toxicity-blue?style=for-the-badge&logo=paypal)](https://www.paypal.com/paypalme/toxicity188?country.x=KR&locale.x=en_US)
+> [!WARNING]
+> **PLATFORM COMPATIBILITY NOTICE**
+> This fork is **STRICTLY** for Paper 1.21.11+ and Folia 1.21.11+. Legacy compatibility layers have been removed to maximize performance. If you are not running modern Paper/Folia, this plugin **will not function**.
 
-</div>
+---
 
-![156ab45b912cc836](https://github.com/toxicity188/BetterHealthBar3/assets/114675706/b6a9871b-0e96-48d1-84c5-7dd491576c4b)  
+## 🚀 Key Features in Detail
 
-### Asynchronous health bar creation
-![327962748-ae033d45-f040-486e-9943-6ce9c1cf6bc6](https://github.com/toxicity188/BetterHealthBar3/assets/114675706/64a96e7a-04ac-4ae2-b9e0-9b71a62de04b)  
-This plugin implements beautiful health bar!
+### ⚡ Concurrency & Threading (Folia Native)
+- **Folia Native Support**: Leverages `FoliaScheduler` for correct Regionized Multithreading support, ensuring health bars update safely and efficiently across parallel regions.
+- **Asynchronous Processing**: Heavy lifting like health bar creation and packet construction is handled asynchronously to prevent main-thread stalls.
 
-### Sight trace
-![ezgif-4-6688863fff](https://github.com/toxicity188/BetterHealthBar3/assets/114675706/8484a92e-d0c2-4fd5-a766-5c5cb9fe697c)  
-This plugin supports sight-trace system.
+### 🛠️ Core Optimizations & Debloating
+- **Java 21 Native**: Leveraging the latest JVM optimizations for maximum throughput and memory efficiency.
+- **Paper/Folia Exclusive**: Removed legacy NMS adapters (1.19.4 - 1.21.9) and Spigot compatibility code. The plugin now interacts directly with the server internals for 1.21.11+.
+- **Efficient Sight Tracing**: ray-tracing logic optimized for performance (`look-degree`, `look-distance`) to ensure health bars appear only when relevant without lag.
 
-### Custom core shaders
-![2024_05_03_10_05_19_637-min](https://github.com/toxicity188/BetterHealthBar3/assets/114675706/7a0efa03-a6e7-42fd-b38e-a92d69503ad3)  
-This plugin has it's own core shaders, fixes z-fighting issue!
+### 🎨 Visuals & Customization
+- **Core Shaders**: Custom shader support to fix z-fighting issues, ensuring health bars render cleanly.
+- **Stack System**: Advanced stack system support for buff/debuff visualization.
+- **ModelEngine Compatibility**: Native support for ModelEngine with automatic height detection.
 
-### Stack system
-![녹화_2024_05_05_10_11_17_395-min](https://github.com/toxicity188/BetterHealthBar3/assets/114675706/d0903a79-e55d-4634-babb-063af2ef0c7c)  
-This plugin supports stack system, make it supports many system like buff.
+---
 
-### ModelEngine support
-![2024-05-05_08 58 58](https://github.com/toxicity188/BetterHealthBar3/assets/114675706/4d87bab8-a3d9-4df6-957c-d04c8f490282)  
-This plugin supports ModelEngine, automatically detects mob's height.
+## ⚙️ Configuration
 
-# Dependency
-No
+BetterHealthBar is primarily tuned via `config.yml`.
 
-# Version
-1.19.4-1.21.4
+### Key Settings
+| Key | Default | Description |
+|-----|---------|-------------|
+| `pack-type` | `FOLDER` | How the resource pack is generated (`FOLDER` or `ZIP`). |
+| `look-distance` | `15.0` | Maximum distance to render health bars. |
+| `look-degree` | `20.0` | Angle field of view for showing health bars. |
+| `use-core-shaders` | `true` | Enables custom shaders to fix z-fighting (Recommended). |
+| `enable-self-host` | `false` | Enables built-in HTTP server for resource pack hosting. |
+| `self-host-port` | `8163` | Port for the self-hosted resource pack server. |
+| `show-me-healthbar` | `true` | Toggles visibility of your own health bar. |
+| `disable-to-invisible-mob` | `true` | Hides health bars for invisible mobs. |
 
-# Command
-/healthbar - Reload command
+---
 
-# Permission
-betterhealthbar.reload - Access to reload command
+## 🛠 Building & Deployment
 
-# Build
-./gradlew build
+Requires **Java 21**.
 
-# API
-[![](https://jitpack.io/v/toxicity188/BetterHealthBar3.svg)](https://jitpack.io/#toxicity188/BetterHealthBar3)
-``` kotlin
-repositories {
-  mavenCenteral()
-  maven("https://jitpack.io")
-}
-
-dependencies {
-  compileOnly("com.github.toxicity188:BetterHealthBar3:VERSION"}
-}
+```bash
+# Clean and compile the project
+./gradlew clean build
 ```
-# License
-This plugin is basically premium plugin, so you have to purchase it in SpigotMC to use it. but i allow you to download source, decompile/compile plugin or rebuild.
 
-# Extra
-![화면 캡처 2024-12-03 003808](https://github.com/user-attachments/assets/44f6a200-96e0-45f4-8af2-0358eb11001d)  
-In short, I never do it myself; why don't you request MythicCraft to make a MythicHealthBar too?
+---
+
+## 🤝 Credits & Inspiration
+This project is built upon the innovation of the broader Minecraft development community:
+- **[BetterHealthBar3](https://github.com/toxicity188/BetterHealthBar3)** - The original project by toxicity188.
+
+---
+
+## 📜 License
+- **Custom BTC-CORE Patches**: Proprietary to **BTC Studio**.
+- **Upstream Source**: Original licenses apply to their respective components from BetterHealthBar3.
+
+---
+**Fork maintained by BTCSTUDIO**
