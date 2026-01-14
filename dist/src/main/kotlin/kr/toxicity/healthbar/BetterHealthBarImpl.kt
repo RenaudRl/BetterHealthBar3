@@ -53,6 +53,10 @@ class BetterHealthBarImpl : BetterHealthBar() {
         Class.forName("com.destroystokyo.paper.profile.PlayerProfile")
         true
     }.getOrDefault(false)
+    private val isBTCCore = runCatching {
+        Class.forName("com.infernalsuite.asp.config.BTCCoreConfig")
+        true
+    }.getOrDefault(false)
     private var bedrock = BedrockAdapter.NONE
     private var model = ModelAdapter.NONE
     private lateinit var nms: NMS
@@ -78,6 +82,7 @@ class BetterHealthBarImpl : BetterHealthBar() {
     override fun onEnable() {
         val log = ArrayList<String>()
         val manager = Bukkit.getPluginManager()
+        if (isBTCCore) log.add("BTC-CORE detected.")
         nms = when (MinecraftVersion.current) {
             MinecraftVersion.version1_21_11 -> kr.toxicity.healthbar.nms.v1_21_R7.NMSImpl()
             else -> {
@@ -211,6 +216,7 @@ class BetterHealthBarImpl : BetterHealthBar() {
     override fun scheduler(): WrappedScheduler = scheduler
     override fun nms(): NMS = nms
     override fun isFolia(): Boolean = isFolia
+    override fun isBTCCore(): Boolean = isBTCCore
     override fun isPaper(): Boolean = isPaper
     override fun loadAssets(prefix: String, dir: File) {
         loadAssets(prefix) { s, i ->

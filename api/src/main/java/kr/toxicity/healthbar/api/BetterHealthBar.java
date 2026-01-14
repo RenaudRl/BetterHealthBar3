@@ -36,6 +36,7 @@ public abstract class BetterHealthBar extends JavaPlugin {
     public abstract @NotNull NMS nms();
     public abstract boolean isPaper();
     public abstract boolean isFolia();
+    public abstract boolean isBTCCore();
     public abstract @NotNull WrappedScheduler scheduler();
     public abstract @NotNull ModelAdapter modelAdapter();
     public abstract @NotNull BedrockAdapter bedrock();

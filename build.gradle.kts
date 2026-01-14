@@ -158,7 +158,7 @@ tasks {
     }
     shadowJar {
         manifest {
-            attributes["paperweight-mappings-namespace"] = "spigot"
+            attributes["paperweight-mappings-namespace"] = "mojang"
         }
         nmsVersions.forEach {
             dependsOn("nms:${it.name}:reobfJar")
