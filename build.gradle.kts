@@ -68,6 +68,7 @@ fun getApiDependencyProject(name: String) = project(name).dependency(api)
 
 val dist = getApiDependencyProject("dist").spigot()
     .dependency("io.lumine:Mythic-Dist:5.11.1")
+    .dependency(files("Docs/btcmobs/btcMobs-api/build/libs/btcMobs-api-0.1.0-SNAPSHOT.jar"))
     .dependency("io.github.arcaneplugins:levelledmobs-plugin:4.0.3.1")
     .dependency("me.clip:placeholderapi:2.11.7")
     .dependency("com.alessiodp.parties:parties-bukkit:3.2.16")
@@ -158,7 +159,7 @@ tasks {
     }
     shadowJar {
         manifest {
-            attributes["paperweight-mappings-namespace"] = "mojang"
+            attributes["paperweight-mappings-namespace"] = "spigot"
         }
         nmsVersions.forEach {
             dependsOn("nms:${it.name}:reobfJar")

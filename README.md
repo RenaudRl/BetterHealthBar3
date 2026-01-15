@@ -27,6 +27,13 @@
 - **Core Shaders**: Custom shader support to fix z-fighting issues, ensuring health bars render cleanly.
 - **Stack System**: Advanced stack system support for buff/debuff visualization.
 - **ModelEngine Compatibility**: Native support for ModelEngine with automatic height detection.
+	
+### 🧩 BTC Mobs Integration
+- **Seamless Support**: Native integration with BTC Mobs, mirroring the deep compatibility found with MythicMobs.
+- **Auto-Hide**: Automatically hides default BTC Mob nameplates/text displays to let BetterHealthBar take over.
+- **Placeholders**:
+  - `%btcmobs%`: Displays the mob's internal name (or display name if available).
+  - `%btcmobs_level%`: Displays the mob's current level.
 
 ---
 

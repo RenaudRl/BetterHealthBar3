@@ -30,6 +30,9 @@ object CompatibilityManager : BetterHealthBerManager {
         },
         "BetterHud" to {
             BetterHudCompatibility()
+        },
+        "btcMobs" to {
+            BtcMobsCompatibility()
         }
     )
 

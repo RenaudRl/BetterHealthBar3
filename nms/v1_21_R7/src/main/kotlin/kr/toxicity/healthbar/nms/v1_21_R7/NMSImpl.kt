@@ -6,7 +6,7 @@ import com.mojang.math.Transformation
 import io.netty.channel.ChannelDuplexHandler
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelPromise
-import io.papermc.paper.adventure.PaperAdventure
+
 import io.papermc.paper.entity.LookAnchor
 import kr.toxicity.healthbar.api.BetterHealthBar
 import kr.toxicity.healthbar.api.nms.NMS
@@ -18,10 +18,8 @@ import kr.toxicity.healthbar.api.trigger.PacketTrigger
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.pointer.Pointers
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
-import net.minecraft.network.Connection
-import net.minecraft.network.protocol.game.*
+import net.minecraft.network.protocol.Packet
+import net.minecraft.network.protocol.game.ClientGamePacketListener
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.server.network.ServerCommonPacketListenerImpl
@@ -63,8 +61,21 @@ class NMSImpl : NMS {
     private val plugin
         get() = BetterHealthBar.inst()
 
-    private val getConnection: (ServerCommonPacketListenerImpl) -> Connection = {
-        it.connection
+    private val connectionField = ServerCommonPacketListenerImpl::class.java.declaredFields.first {
+        it.type.simpleName == "Connection" || it.type.simpleName == "NetworkManager"
+    }.apply {
+        isAccessible = true
+    }
+    private val channelField by lazy {
+        connectionField.type.declaredFields.first {
+            io.netty.channel.Channel::class.java.isAssignableFrom(it.type)
+        }.apply {
+            isAccessible = true
+        }
+    }
+
+    private val getConnection: (ServerCommonPacketListenerImpl) -> Any = {
+        connectionField[it]
     }
 
     private val getEntityById: (LevelEntityGetter<net.minecraft.world.entity.Entity>, Int) -> net.minecraft.world.entity.Entity? = EntityLookup::class.java.declaredFields.first {
@@ -75,7 +86,26 @@ class NMSImpl : NMS {
             (it[e] as ConcurrentLong2ReferenceChainedHashTable<*>)[i.toLong()] as? net.minecraft.world.entity.Entity
         }
     }
-    private val getEntityFromMovePacket: (ClientboundMoveEntityPacket) -> Int = ClientboundMoveEntityPacket::class.java.declaredFields.first {
+    private fun getClass(vararg names: String): Class<*> {
+        for (name in names) {
+            try {
+                return Class.forName(name)
+            } catch (_: ClassNotFoundException) {}
+        }
+        throw ClassNotFoundException("Could not find any of: ${names.joinToString()}")
+    }
+
+    private val chatComponentClass = getClass("net.minecraft.network.chat.Component", "net.minecraft.network.chat.IChatBaseComponent")
+    private val moveEntityClass = getClass("net.minecraft.network.protocol.game.ClientboundMoveEntityPacket", "net.minecraft.network.protocol.game.PacketPlayOutEntity")
+    private val damageEventPacketClass = getClass("net.minecraft.network.protocol.game.ClientboundDamageEventPacket", "net.minecraft.network.protocol.game.PacketPlayOutDamageEvent")
+    private val addEntityPacketClass = getClass("net.minecraft.network.protocol.game.ClientboundAddEntityPacket", "net.minecraft.network.protocol.game.PacketPlayOutSpawnEntity")
+    private val setEntityDataPacketClass = getClass("net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket", "net.minecraft.network.protocol.game.PacketPlayOutEntityMetadata")
+    private val entityPositionSyncPacketClass = getClass("net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket", "net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport")
+    private val removeEntitiesPacketClass = getClass("net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket", "net.minecraft.network.protocol.game.PacketPlayOutEntityDestroy")
+    private val movePlayerPacketClass = getClass("net.minecraft.network.protocol.game.ServerboundMovePlayerPacket", "net.minecraft.network.protocol.game.PacketPlayInFlying")
+
+
+    private val getEntityFromMovePacket: (Any) -> Int = moveEntityClass.declaredFields.first {
         Integer.TYPE.isAssignableFrom(it.type)
     }.let {
         it.isAccessible = true
@@ -83,8 +113,35 @@ class NMSImpl : NMS {
             it[p] as Int
         }
     }
-    private val textVanilla: (Component) -> net.minecraft.network.chat.Component = {
-        PaperAdventure.asVanilla(it)
+    private val paperAdventureClass = try {
+        Class.forName("io.papermc.paper.adventure.PaperAdventure")
+    } catch (_: Exception) {
+         null
+    }
+    private val asVanillaMethod = paperAdventureClass?.getMethod("asVanilla", net.kyori.adventure.text.Component::class.java)
+
+    private val textVanilla: (net.kyori.adventure.text.Component) -> Any = {
+        asVanillaMethod?.invoke(null, it) ?: throw RuntimeException("PaperAdventure or asVanilla not found")
+    }
+
+    private fun getEntityIdFromPacket(packet: Any): Int {
+        try {
+            return packet.javaClass.getMethod("entityId").invoke(packet) as Int
+        } catch (_: Exception) {}
+        try {
+            return packet.javaClass.getField("entityId").getInt(packet)
+        } catch (_: Exception) {}
+        try {
+            return packet.javaClass.getField("a").getInt(packet)
+        } catch (_: Exception) {}
+        try {
+            // iterate int fields, maybe first one is entity id? Risky but common.
+             packet.javaClass.declaredFields.firstOrNull { it.type == Int::class.javaPrimitiveType }?.let {
+                 it.isAccessible = true
+                 return it.getInt(packet)
+             }
+        } catch (_: Exception) {}
+        return 0
     }
 
     override fun foliaAdapt(player: Player): Player {
@@ -222,7 +279,8 @@ class NMSImpl : NMS {
     private fun net.minecraft.world.entity.Entity.moveTo(x: Double, y: Double, z: Double, yaw: Float, pitch: Float) = snapTo(x, y, z, yaw, pitch)
 
     override fun createBundler(): PacketBundler = bundlerOf()
-    override fun createTextDisplay(location: Location, component: Component): VirtualTextDisplay {
+    @Suppress("UNCHECKED_CAST")
+    override fun createTextDisplay(location: Location, component: net.kyori.adventure.text.Component): VirtualTextDisplay {
         val display = TextDisplay(EntityType.TEXT_DISPLAY, (location.world as CraftWorld).handle).apply {
             billboardConstraints = Display.BillboardConstraints.CENTER
             entityData.run {
@@ -231,7 +289,11 @@ class NMSImpl : NMS {
                 set(TextDisplay.DATA_LINE_WIDTH_ID, Int.MAX_VALUE)
             }
             brightnessOverride = Brightness(15, 15)
-            text = textVanilla(component)
+            try {
+                this.javaClass.getMethod("b", chatComponentClass).invoke(this, textVanilla(component))
+            } catch (_: Exception) {
+                this.javaClass.getMethod("setText", chatComponentClass).invoke(this, textVanilla(component))
+            }
             viewRange = 10F
             moveTo(
                 location.x,
@@ -244,20 +306,20 @@ class NMSImpl : NMS {
         return object : VirtualTextDisplay {
             override fun spawn(bundler: PacketBundler) {
                 display.run {
-                    bundler += ClientboundAddEntityPacket(
-                        id,
-                        uuid,
-                        x,
-                        y,
-                        z,
-                        xRot,
-                        yRot,
-                        type,
-                        0,
-                        deltaMovement,
-                        yHeadRot.toDouble()
-                    )
-                    bundler += ClientboundSetEntityDataPacket(id, entityData.nonDefaultValues!!)
+                    try {
+                        bundler += addEntityPacketClass.getConstructor(net.minecraft.world.entity.Entity::class.java).newInstance(this) as Packet<ClientGamePacketListener>
+                    } catch (_: Exception) {
+                        try {
+                             bundler += addEntityPacketClass.getConstructor(net.minecraft.world.entity.Entity::class.java, Int::class.javaPrimitiveType).newInstance(this, 0) as Packet<ClientGamePacketListener>
+                        } catch (e: Exception) {
+                             e.printStackTrace()
+                        }
+                    }
+                    try {
+                        bundler += setEntityDataPacketClass.getConstructor(Int::class.javaPrimitiveType, List::class.java).newInstance(id, entityData.nonDefaultValues!!) as Packet<ClientGamePacketListener>
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
             override fun shadowRadius(radius: Float) {
@@ -267,9 +329,18 @@ class NMSImpl : NMS {
                 display.shadowStrength = strength
             }
             override fun update(bundler: PacketBundler) {
-                bundler += ClientboundEntityPositionSyncPacket(display.id, PositionMoveRotation.of(display), display.onGround)
+                try {
+                    bundler += entityPositionSyncPacketClass.getConstructor(Int::class.javaPrimitiveType, PositionMoveRotation::class.java, Boolean::class.javaPrimitiveType)
+                        .newInstance(display.id, PositionMoveRotation.of(display), display.onGround) as Packet<ClientGamePacketListener>
+                } catch (_: Exception) {
+                    // Fallback or ignore if packet doesn't exist
+                }
                 display.entityData.packDirty()?.let {
-                    bundler += ClientboundSetEntityDataPacket(display.id, it)
+                    try {
+                        bundler += setEntityDataPacketClass.getConstructor(Int::class.javaPrimitiveType, List::class.java).newInstance(display.id, it) as Packet<ClientGamePacketListener>
+                    } catch (e: Exception) {
+                         e.printStackTrace()
+                    }
                 }
             }
             override fun teleport(location: Location) {
@@ -282,8 +353,13 @@ class NMSImpl : NMS {
                 )
             }
 
-            override fun text(component: Component) {
-                display.text = textVanilla(component.compact())
+            override fun text(component: net.kyori.adventure.text.Component) {
+                val vanilla = textVanilla(component.compact())
+                try {
+                    display.javaClass.getMethod("b", chatComponentClass).invoke(display, vanilla)
+                } catch (_: Exception) {
+                    display.javaClass.getMethod("setText", chatComponentClass).invoke(display, vanilla)
+                }
             }
 
             override fun transformation(location: Vector, scale: Vector) {
@@ -292,7 +368,22 @@ class NMSImpl : NMS {
             }
 
             override fun remove(bundler: PacketBundler) {
-                bundler += ClientboundRemoveEntitiesPacket(display.id)
+                try {
+                     // Varargs constructor usually?
+                     bundler += removeEntitiesPacketClass.getConstructor(IntArray::class.java).newInstance(intArrayOf(display.id)) as Packet<ClientGamePacketListener>
+                } catch (_: Exception) {
+                    try {
+                        // List?
+                        bundler += removeEntitiesPacketClass.getConstructor(List::class.java).newInstance(listOf(display.id)) as Packet<ClientGamePacketListener>
+                    } catch (e: Exception) {
+                        // Single int?
+                        try {
+                            bundler += removeEntitiesPacketClass.getConstructor(Int::class.javaPrimitiveType).newInstance(display.id) as Packet<ClientGamePacketListener>
+                        } catch (e2: Exception) {
+                             e2.printStackTrace()
+                        }
+                    }
+                }
             }
         }
     }
@@ -325,15 +416,16 @@ class NMSImpl : NMS {
         }
 
         init {
-            val pipeLine = getConnection(connection).channel.pipeline()
+            val channel = channelField[getConnection(connection)] as io.netty.channel.Channel
+            val pipeLine = channel.pipeline()
             pipeLine.toMap().forEach {
-                if (it.value is Connection) pipeLine.addBefore(it.key, BetterHealthBar.NAMESPACE, this)
+                if (it.value::class.java.simpleName == "Connection" || it.value::class.java.simpleName == "NetworkManager") pipeLine.addBefore(it.key, BetterHealthBar.NAMESPACE, this)
             }
         }
 
         fun uninject() {
             task.cancel()
-            val channel = getConnection(connection).channel
+            val channel = channelField[getConnection(connection)] as io.netty.channel.Channel
             channel.eventLoop().submit {
                 channel.pipeline().remove(BetterHealthBar.NAMESPACE)
             }
@@ -400,16 +492,19 @@ class NMSImpl : NMS {
         private fun Int.toEntity() = getEntityById(getLevelGetter(), this)
 
         override fun write(ctx: ChannelHandlerContext?, msg: Any?, promise: ChannelPromise?) {
-            when (msg) {
-                is ClientboundDamageEventPacket -> show(msg, HealthBarTriggerType.DAMAGE, msg.entityId.toEntity())
-                is ClientboundMoveEntityPacket -> show(msg, HealthBarTriggerType.MOVE, getEntityFromMovePacket(msg).toEntity())
+            if (msg != null) {
+                if (moveEntityClass.isInstance(msg)) {
+                    show(msg, HealthBarTriggerType.MOVE, getEntityFromMovePacket(msg).toEntity())
+                } else if (damageEventPacketClass.isInstance(msg)) {
+                     show(msg, HealthBarTriggerType.DAMAGE, getEntityIdFromPacket(msg).toEntity())
+                }
             }
             super.write(ctx, msg, promise)
         }
 
         override fun channelRead(ctx: ChannelHandlerContext?, msg: Any?) {
-            when (msg) {
-                is ServerboundMovePlayerPacket -> taskQueue.add {
+            if (msg != null && movePlayerPacketClass.isInstance(msg)) {
+                taskQueue.add {
                     getViewedEntity().forEach {
                         show(msg, HealthBarTriggerType.LOOK, it)
                     }
