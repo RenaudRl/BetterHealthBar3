@@ -120,7 +120,7 @@ dependencies {
     implementation(getProject("modelengine:legacy").spigot().dependency("com.ticxo.modelengine:api:R3.2.0"))
     implementation(getProject("modelengine:current").spigot().dependency("com.ticxo.modelengine:ModelEngine:R4.0.9"))
     nmsVersions.forEach {
-        implementation(project(":nms:${it.name}", configuration = "reobf"))
+        implementation(project(":nms:${it.name}"))
     }
 }
 
@@ -159,10 +159,7 @@ tasks {
     }
     shadowJar {
         manifest {
-            attributes["paperweight-mappings-namespace"] = "spigot"
-        }
-        nmsVersions.forEach {
-            dependsOn("nms:${it.name}:reobfJar")
+            attributes["paperweight-mappings-namespace"] = "mojang"
         }
         archiveClassifier = ""
         fun prefix(pattern: String) {
