@@ -312,7 +312,37 @@ class NMSImpl : NMS {
                         try {
                              bundler += addEntityPacketClass.getConstructor(net.minecraft.world.entity.Entity::class.java, Int::class.javaPrimitiveType).newInstance(this, 0) as Packet<ClientGamePacketListener>
                         } catch (e: Exception) {
-                             e.printStackTrace()
+                            try {
+                                val vec3Class = getClass("net.minecraft.world.phys.Vec3")
+                                val vec3 = vec3Class.getConstructor(Double::class.javaPrimitiveType, Double::class.javaPrimitiveType, Double::class.javaPrimitiveType).newInstance(0.0, 0.0, 0.0)
+                                bundler += addEntityPacketClass.getConstructor(
+                                    Int::class.javaPrimitiveType,
+                                    UUID::class.java,
+                                    Double::class.javaPrimitiveType,
+                                    Double::class.javaPrimitiveType,
+                                    Double::class.javaPrimitiveType,
+                                    Float::class.javaPrimitiveType,
+                                    Float::class.javaPrimitiveType,
+                                    EntityType::class.java,
+                                    Int::class.javaPrimitiveType,
+                                    vec3Class,
+                                    Double::class.javaPrimitiveType
+                                ).newInstance(
+                                    id,
+                                    uuid,
+                                    x,
+                                    y,
+                                    z,
+                                    xRot,
+                                    yRot,
+                                    type,
+                                    0,
+                                    vec3,
+                                    yRot
+                                ) as Packet<ClientGamePacketListener>
+                            } catch (e2: Exception) {
+                                e2.printStackTrace()
+                            }
                         }
                     }
                     try {
